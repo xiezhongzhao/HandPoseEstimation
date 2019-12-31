@@ -30,7 +30,7 @@ def elapsed(sec):
 #save array to txt file
 def save_results(results, out_file):
 
-    with open(out_file, 'w+') as f:
+    with open(out_file, 'w') as f:
         for i in range(results.shape[0]):
             for j in range(results.shape[1]):
                 for k in range(results.shape[2]):
@@ -50,7 +50,7 @@ def test_model(dir, epoch):
     image_test = np.load(dir + 'NYU_Image_Test.npy').reshape([-1, 128, 128, 1])
     label_test = np.load(dir + 'NYU_Label_Test.npy').reshape([-1, 42])
 
-    test_dir = 'H:/HandPoseEstimation/dataset/NYU/test/'
+    test_dir = os.path.join(dir, 'test/')
     labels_test = sio.loadmat(test_dir + "joint_data.mat")
     joint_uvd_test = labels_test['joint_uvd'][0]  # shape: (8252,36,3)
     joint_xyz_test = labels_test['joint_xyz'][0]  # shape: (8252,36,3)
@@ -71,7 +71,7 @@ def test_model(dir, epoch):
         # obtain the ground-truth joints
         labels_norm = np.zeros(((8252, 14, 3)))
         for i, labels_gt in enumerate(label_test):
-            labels_norm[i] = labels_gt.reshape([14,3]) + joint_xyz_test[i,34]
+            labels_norm[i] = labels_gt.reshape([14,3]) * 150 + joint_xyz_test[i,34]
 
         # obtain the joints that network outputs
         outputs = np.zeros((8252,42))
@@ -94,15 +94,16 @@ def test_model(dir, epoch):
 
         # save the uvd prediction joints
         dir = 'H:/HandPoseEstimation/result/nyu/'
-        out_file = dir + 'epoch:{}_{}mm.txt'.format(epoch, average_error)
+        out_file = os.path.join(dir, "epoch_%d_%.2fmm.txt" % (epoch, int(average_error)))
         outputs_labels_uvd = world2pixel(outputs_labels, 588.036865, 587.075073, 320, 240)
+
         save_results(outputs_labels_uvd, out_file)
 
+    return average_error
 
 
 X_in_image = tf.placeholder(dtype=tf.float32, shape=[None, 128, 128, 1], name='X_in_image')
 X_in_label = tf.placeholder(dtype=tf.float32, shape=[None, 42], name='X_in_label')
-
 keep_prob = tf.placeholder(tf.float32, name='keep_prob')
 
 class multi_resnet():
@@ -246,6 +247,7 @@ label_path_train = 'H:/HandPoseEstimation/dataset/NYU/train/joint_data.mat'
 epoches = 1
 batch_size = 64
 learning_rate = 0.0001
+average_error_flag = 30 # 30 mm
 
 # pred = multi_resnet().concat_multi_scale(X_in_image)
 pred = multi_resnet().bulid_resNet(X_in_image)
@@ -272,14 +274,14 @@ with tf.Session() as sess:
     sess.run(init)
 
     # epoch iteration
-
     for epoch in range(epoches):
 
         idx = list(random.sample(range(0, 72757), 72757))
         rng = np.random.RandomState(23455)
 
         # batch at every epoch
-        for num_batch in range(0, len(idx) // batch_size):
+        # for num_batch in range(0, len(idx) // batch_size):
+        for num_batch in range(0, 1):
 
             batch_image_train = []
             batch_label_train = []
@@ -298,7 +300,7 @@ with tf.Session() as sess:
                 # random factor
                 sigma_sc = 0.02
                 sigma_com = 10.
-                num_poses = 1
+                num_poses = 1.0
                 sc = np.fabs(rng.randn(int(num_poses)) * sigma_sc + 1.)  #scale factor
                 offset = rng.randn(int(num_poses), 3) * sigma_com # translation factor
                 rot_random = np.random.uniform(0, 360, 1) # rotation factor
@@ -349,8 +351,6 @@ with tf.Session() as sess:
             batch_joint = np.array(batch_label_train).reshape(-1,42)[idx_batch]
 
             # fig = figure_joint_skeleton(batch_image[13].reshape(128,128), batch_joint[13].reshape(14,3), 1)
-            # fig = figure_joint_skeleton(batch_image[23].reshape(128, 128), batch_joint[23].reshape(14, 3), 1)
-            # fig = figure_joint_skeleton(batch_image[33].reshape(128, 128), batch_joint[33].reshape(14, 3), 1)
             # plt.show()
             # exit()
 
@@ -369,11 +369,14 @@ with tf.Session() as sess:
             steps.append(epoch * len(idx) // batch_size + num_batch)
             dis_loss_list.append(loss)
 
-        saver.save(sess, 'H:/HandPoseEstimation/model/nyu/model_{}.ckpt'.format(epoch))
-        test_model(dir, epoch)
+        saver.save(sess, "H:/HandPoseEstimation/model/nyu/model_{}.ckpt".format(epoch))
+        average_error = test_model(dir, epoch)
+        # if average_error <= average_error_flag:
+        #     average_error_flag = average_error
+        #     saver.save(sess, "H:/HandPoseEstimation/model/nyu/model_{}.ckpt".format(epoch))
+
 
 duration_time_sum = time.time() - start_time_sum
-
 print("The total training time: ",elapsed(duration_time_sum))
 
 

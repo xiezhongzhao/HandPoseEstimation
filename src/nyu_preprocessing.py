@@ -367,7 +367,7 @@ def scaleHand(dpt, cube_size, sc, com, joints3D):
 #         com3D = joint_xyz[id, 34] # shape: (3, )
 #
 #         depth_crop = (depth - com3D[2]) / 150
-#         joint_center = (joint_xyz[id][joint_id] - com3D) / 150 # shape: (31,3)
+#         joint_center = (joint_xyz[id][joint_id] - com3D) / 150 # shape: (31,3)->(14,3)
 #
 #         depth_center[id] = depth_crop
 #         joint_xyz_center[id] = joint_center
