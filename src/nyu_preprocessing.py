@@ -324,60 +324,60 @@ def scaleHand(dpt, cube_size, sc, com, joints3D):
 
 
 
-# data_names =   ['test']
-# cube_sizes =   [300]
-# id_starts =    [0]
-# id_ends =      [8252]
-# num_packages = [3]
-#
-# depth_center = np.zeros(((8252, 128, 128)))
-# joint_xyz_center = np.zeros(((8252, 14, 3)))
-#
-# for D in range(0, len(data_names)):
-#
-#     data_name = data_names[D]   # train
-#     cube_size = cube_sizes[D]   # 340
-#     id_start = id_starts[D]     # 0
-#     id_end = id_ends[D]         # 72756
-#     chunck_size = (id_end - id_start) / num_packages[D] #(72756-0)/3 = 24252
-#
-#     data_type = 'train' if data_name == 'train' else 'test'  # train
-#     data_path = '{}/{}'.format(dataset_path, data_type)      # NYU/train/
-#     label_path = '{}/joint_data.mat'.format(data_path)       # NYU/train/joint_data.mat
-#
-#     print(label_path)
-#
-#     labels = sio.loadmat(label_path)
-#     joint_uvd = labels['joint_uvd'][0]  # shape: (72757,36,3)
-#     joint_xyz = labels['joint_xyz'][0]  # shape: (72757,36,3)
-#
-#     for id in range(id_start, id_end):
-#
-#         img_path = '{}/depth_1_{:07d}.png'.format(data_path, id + 1)  # NYU/train/depth_1_{:07d}.png
-#         print(img_path)
-#
-#         if not os.path.exists(img_path):
-#             print('{} Not Exists!'.format(img_path))
-#             continue
-#
-#         img = cv2.imread(img_path) # shape:(480,640,3)
-#         ori_depth = np.asarray(img[:, :, 0] + img[:, :, 1]*256) #shape: (480,640)
-#
-#         depth = cropImage(ori_depth, joint_uvd[id, 34], cube_size=300) #shape: (128,128)
-#         com3D = joint_xyz[id, 34] # shape: (3, )
-#
-#         depth_crop = (depth - com3D[2]) / 150
-#         joint_center = (joint_xyz[id][joint_id] - com3D) / 150 # shape: (31,3)->(14,3)
-#
-#         depth_center[id] = depth_crop
-#         joint_xyz_center[id] = joint_center
-#
-# np.save('H:/HandPoseEstimation/dataset/NYU/NYU_Image_Test.npy',depth_center)
-# np.save('H:/HandPoseEstimation/dataset/NYU/NYU_Label_Test.npy',joint_xyz_center)
-#
-# print("depth_center.shape", depth_center.shape)
-# print("joint_xyz_center.shape", joint_xyz_center.shape)
-#
-# print("depth[0]: ", depth_center[0])
-# print("joint[0]: ", joint_xyz_center[0])
+data_names =   ['test']
+cube_sizes =   [300]
+id_starts =    [0]
+id_ends =      [8252]
+num_packages = [3]
+
+depth_center = np.zeros(((8252, 128, 128)))
+joint_xyz_center = np.zeros(((8252, 14, 3)))
+
+for D in range(0, len(data_names)):
+
+    data_name = data_names[D]   # train
+    cube_size = cube_sizes[D]   # 340
+    id_start = id_starts[D]     # 0
+    id_end = id_ends[D]         # 72756
+    chunck_size = (id_end - id_start) / num_packages[D] #(72756-0)/3 = 24252
+
+    data_type = 'train' if data_name == 'train' else 'test'  # train
+    data_path = '{}/{}'.format(dataset_path, data_type)      # NYU/train/
+    label_path = '{}/joint_data.mat'.format(data_path)       # NYU/train/joint_data.mat
+
+    print(label_path)
+
+    labels = sio.loadmat(label_path)
+    joint_uvd = labels['joint_uvd'][0]  # shape: (72757,36,3)
+    joint_xyz = labels['joint_xyz'][0]  # shape: (72757,36,3)
+
+    for id in range(id_start, id_end):
+
+        img_path = '{}/depth_1_{:07d}.png'.format(data_path, id + 1)  # NYU/train/depth_1_{:07d}.png
+        print(img_path)
+
+        if not os.path.exists(img_path):
+            print('{} Not Exists!'.format(img_path))
+            continue
+
+        img = cv2.imread(img_path) # shape:(480,640,3)
+        ori_depth = np.asarray(img[:, :, 0] + img[:, :, 1]*256) #shape: (480,640)
+
+        depth = cropImage(ori_depth, joint_uvd[id, 34], cube_size=300) #shape: (128,128)
+        com3D = joint_xyz[id, 34] # shape: (3, )
+
+        depth_crop = (depth - com3D[2]) / 150
+        joint_center = (joint_xyz[id][joint_id] - com3D) / 150 # shape: (31,3)->(14,3)
+
+        depth_center[id] = depth_crop
+        joint_xyz_center[id] = joint_center
+
+np.save('H:/HandPoseEstimation/dataset/NYU/NYU_Image_Test.npy',depth_center)
+np.save('H:/HandPoseEstimation/dataset/NYU/NYU_Label_Test.npy',joint_xyz_center)
+
+print("depth_center.shape", depth_center.shape)
+print("joint_xyz_center.shape", joint_xyz_center.shape)
+
+print("depth[0]: ", depth_center[0])
+print("joint[0]: ", joint_xyz_center[0])
 

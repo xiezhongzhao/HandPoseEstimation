@@ -94,7 +94,7 @@ def test_model(dir, epoch):
 
         # save the uvd prediction joints
         dir = 'H:/HandPoseEstimation/result/nyu/'
-        out_file = os.path.join(dir, "epoch_%d_%.2fmm.txt" % (epoch, int(average_error)))
+        out_file = os.path.join(dir, "epoch_%d_%.2fmm.txt" % (epoch, float(average_error)))
         outputs_labels_uvd = world2pixel(outputs_labels, 588.036865, 587.075073, 320, 240)
 
         save_results(outputs_labels_uvd, out_file)
@@ -233,7 +233,7 @@ class multi_resnet():
 Train the model
 ========================================
 """
-cube_size = 300
+cube_size = 340
 steps = []
 dis_loss_list = []
 
@@ -244,7 +244,7 @@ import random
 
 dataset_path_train = 'H:/HandPoseEstimation/dataset/NYU/train/'
 label_path_train = 'H:/HandPoseEstimation/dataset/NYU/train/joint_data.mat'
-epoches = 1
+epoches = 100
 batch_size = 64
 learning_rate = 0.0001
 average_error_flag = 30 # 30 mm
@@ -267,7 +267,7 @@ Start session and initialize all the variables
 
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
-start_time_sum = time.time()
+train_start = time.time()
 
 with tf.Session() as sess:
 
@@ -279,21 +279,23 @@ with tf.Session() as sess:
         idx = list(random.sample(range(0, 72757), 72757))
         rng = np.random.RandomState(23455)
 
+        start_epoch = time.time()
         # batch at every epoch
-        # for num_batch in range(0, len(idx) // batch_size):
-        for num_batch in range(0, 1):
+        for num_batch in range(0, len(idx) // batch_size):
 
             batch_image_train = []
             batch_label_train = []
 
-            # get batch images and poses
+            batch_list = list()
             for id in idx[batch_size*num_batch : batch_size*(num_batch+1)]:
+
                 # rand original depth image
                 img_path = '{}/depth_1_{:07d}.png'.format(dataset_path_train, id + 1)  # NYU/train/depth_1_{:07d}.png
 
                 if not os.path.exists(img_path):
                     print('{} Not Exists!'.format(img_path))
                     continue
+
                 img = cv2.imread(img_path)  # shape:(480,640,3)
                 ori_depth = np.asarray(img[:, :, 0] + img[:, :, 1] * 256)  # shape: (480,640)
 
@@ -350,14 +352,11 @@ with tf.Session() as sess:
             batch_image = np.array(batch_image_train)[idx_batch].reshape(-1,128,128,1)
             batch_joint = np.array(batch_label_train).reshape(-1,42)[idx_batch]
 
-            # fig = figure_joint_skeleton(batch_image[13].reshape(128,128), batch_joint[13].reshape(14,3), 1)
-            # plt.show()
-            # exit()
 
+            start_time = time.time()
             loss = sess.run(loss_joints, feed_dict={X_in_image: batch_image, X_in_label: batch_joint,
                                                     keep_prob: 0.3})  # , Noise: batch_noise
 
-            start_time = time.time()
             sess.run(optimizer, feed_dict={X_in_image: batch_image, X_in_label: batch_joint, keep_prob: 0.3})
             duration = time.time() - start_time
 
@@ -374,10 +373,11 @@ with tf.Session() as sess:
         # if average_error <= average_error_flag:
         #     average_error_flag = average_error
         #     saver.save(sess, "H:/HandPoseEstimation/model/nyu/model_{}.ckpt".format(epoch))
+        end_epoch = time.time()
+        print("The total training time: ", elapsed(end_epoch-start_epoch))
 
-
-duration_time_sum = time.time() - start_time_sum
-print("The total training time: ",elapsed(duration_time_sum))
+train_time = time.time() - train_start
+print("The total training time: ",elapsed(train_time))
 
 
 '''
@@ -392,7 +392,6 @@ plt.title('The loss of train')
 plt.legend()
 plt.legend(loc = 'upper right')
 plt.savefig(os.path.join(path, 'loss_curve.png'))
-
 
 
 
